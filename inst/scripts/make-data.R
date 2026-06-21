@@ -165,7 +165,7 @@ for (i in 1:nrow(mtx)) {
     all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
     colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
     # Convert to GRanges object
-    denyGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE)
+    denyGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE, starts.in.df.are.0based = TRUE)
     
     # Genome abbreviation
     genome_id <- mtx$Assembly[i]

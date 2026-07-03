@@ -17,6 +17,7 @@
 
 library(stringr)
 library(GenomicRanges)
+library(GenomeInfoDb)
 library(rtracklayer)
 library(readr)
 library(readxl)
@@ -142,14 +143,14 @@ for (i in 1:nrow(mtx)) {
     }
     if (mtx$Name[i] == "hg38.Yeo.eCLIP_Excludableregions.hg38liftover.bed.fixed") {
       # hg38.Yeo.eCLIP_Excludableregions.hg38liftover.bed.fixed has "-" instead of scores
-      excludeBED <- read_tsv(fileNameOut1, col_names = FALSE)
+      excludeBED <- read_tsv(fileNameOut1, col_names = FALSE, show_col_types = FALSE)
       excludeBED[, 5] <- 0 # Replace scores by 0
       write_tsv(excludeBED, str_remove(fileNameOut1, ".gz$"), col_names = FALSE)
       system(paste0("gzip -f ", str_remove(fileNameOut1, ".gz$")))
     }
     if (mtx$Assembly[i] == "TAIR10") {
       # TAIR10 chromosomes are capitalized, like "Chr1". Convert to lower case
-      excludeBED <- read_tsv(file = fileNameOut1, col_names = FALSE)
+      excludeBED <- read_tsv(file = fileNameOut1, col_names = FALSE, show_col_types = FALSE)
       # Sometimes chromosomes are sjut numbers, append "chr"
       if (sum(grepl("chr", excludeBED$X1, ignore.case = TRUE)) == 0) {
         excludeBED$X1 <- paste0("chr", excludeBED$X1)
@@ -160,7 +161,7 @@ for (i in 1:nrow(mtx)) {
     }
     
     # Have a look at the original data
-    excludeBED <- read_tsv(fileNameOut1, col_names = FALSE)
+    excludeBED <- read_tsv(fileNameOut1, col_names = FALSE, show_col_types = FALSE)
     # Assign column names depending on the number of columns
     all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
     colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
@@ -352,7 +353,7 @@ fileNameOut2 <- file.path(dir_results, "bed", paste0(mtx$Name[i], ".bed"))
 # RDS output file name
 fileNameOut3 <- file.path(dir_results, "rds", paste0(mtx$Name[i], ".rds"))
 # Have a look at the original data
-excludeBED <- read_tsv(fileNameOut1, col_names = FALSE)
+excludeBED <- read_tsv(fileNameOut1, col_names = FALSE, show_col_types = FALSE``)
 # Assign column names depending on the number of columns
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
@@ -413,7 +414,7 @@ fileNameOut2 <- file.path(dir_results, "bed", paste0(mtx$Name[i], ".bed"))
 # RDS output file name
 fileNameOut3 <- file.path(dir_results, "rds", paste0(mtx$Name[i], ".rds"))
 # Have a look at the original data
-excludeBED <- read_tsv(fileNameOut1, col_names = FALSE)
+excludeBED <- read_tsv(fileNameOut1, col_names = FALSE, show_col_types = FALSE)
 # Assign column names depending on the number of columns
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]

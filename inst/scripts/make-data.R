@@ -34,6 +34,20 @@ if (!dir.exists(file.path(dir_results, "rds"))) dir.create(file.path(dir_results
 # https://stackoverflow.com/questions/35282928/how-do-i-set-a-timeout-for-utilsdownload-file-in-r
 options(timeout=100)
 
+# BED-like formats store 0-based starts; GRanges stores 1-based starts.
+is_bed_like_file <- function(x) {
+  any(grepl("\\.(bed|narrowPeak|bb|bigBed)(\\.gz)?(\\?|$)", x, ignore.case = TRUE))
+}
+
+make_granges_from_source <- function(x, source = character(),
+                                     starts_0based = is_bed_like_file(source)) {
+  GenomicRanges::makeGRangesFromDataFrame(
+    x,
+    keep.extra.columns = TRUE,
+    starts.in.df.are.0based = starts_0based
+  )
+}
+
 # Download T2T and mm39 manually generated lists from Google Drive
 download.file(url = "https://drive.google.com/uc?export=download&id=1xxQwn5meQ0U0AtatDmW11V98LqSVqrCS", destfile = file.path(dir_results, "T2T.excluderanges.bed.gz"))
 download.file(url = "https://drive.google.com/uc?export=download&id=17LSNuRTwg5RQCyTLK3GEf8Am1mX_3nyB", destfile = file.path(dir_results, "mm39.excluderanges.bed.gz"))
@@ -166,7 +180,7 @@ for (i in 1:nrow(mtx)) {
     all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
     colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
     # Convert to GRanges object
-    denyGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE, starts.in.df.are.0based = TRUE)
+    denyGR <- make_granges_from_source(excludeBED, source = c(URL, fileNameOut1))
     
     # Genome abbreviation
     genome_id <- mtx$Assembly[i]
@@ -305,7 +319,7 @@ excludeBED <- read_tsv(fileNameOut1, col_names = FALSE)
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
 # Convert to GRanges object
-denyGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE)
+denyGR <- make_granges_from_source(excludeBED)
 
 # Genome abbreviation
 genome_id <- mtx$Assembly[i]
@@ -358,7 +372,7 @@ excludeBED <- read_tsv(fileNameOut1, col_names = FALSE, show_col_types = FALSE``
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
 # Convert to GRanges object
-denyGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE)
+denyGR <- make_granges_from_source(excludeBED, source = fileNameOut1)
 
 # Genome abbreviation
 genome_id <- mtx$Assembly[i]
@@ -419,7 +433,7 @@ excludeBED <- read_tsv(fileNameOut1, col_names = FALSE, show_col_types = FALSE)
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
 # Convert to GRanges object
-denyGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE)
+denyGR <- make_granges_from_source(excludeBED, source = fileNameOut1)
 
 # Genome abbreviation
 genome_id <- mtx$Assembly[i]
@@ -570,7 +584,7 @@ for (genome_id in unique(mtx$Assembly) ) {
     # UCSC coordinates are 0 based: 
     # "chromStart - The starting position of the feature in the chromosome or scaffold. The first base in a chromosome is numbered 0.
     #             ... For example, the first 100 bases of chromosome 1 are defined as chrom=1, chromStart=0, chromEnd=100"
-    gapsGR <- makeGRangesFromDataFrame(gaps_selected, keep.extra.columns = TRUE) # starts.in.df.are.0based=T, 
+    gapsGR <- make_granges_from_source(gaps_selected, starts_0based = TRUE)
     # Sort GR object
     gapsGR <- sort(gapsGR)
     # Select seqinfo data for the gaps object
@@ -619,7 +633,7 @@ for (genome_id in c("hg19", "mm9")) {
   # Process
   gap_type <- 'numtS'
   # mm9 has additional columns throwing an error when creating GRanges
-  gapsGR <- makeGRangesFromDataFrame(gaps[, 1:7], keep.extra.columns = TRUE) # starts.in.df.are.0based=T, 
+  gapsGR <- make_granges_from_source(gaps[, 1:7], starts_0based = TRUE)
   # Sort GR object
   gapsGR <- sort(gapsGR)
   # Look inside 
@@ -666,7 +680,7 @@ query <- ucscTableQuery(mySession, table = "centromeres")
 gaps <- getTable(query)
 # Process
 gap_type <- 'centromere'
-gapsGR <- makeGRangesFromDataFrame(gaps, keep.extra.columns = TRUE)
+gapsGR <- make_granges_from_source(gaps, starts_0based = TRUE)
 # Sort GR object
 gapsGR <- sort(gapsGR)
 # Look inside 
@@ -723,7 +737,7 @@ excludeBED <- read_tsv(fileNameOut1, col_names = FALSE)
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
 # Convert to GRanges object
-gapsGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE)
+gapsGR <- make_granges_from_source(excludeBED, source = c(fileNameOut1, fileNameOut2))
 # Sort GR object
 gapsGR <- sort(gapsGR)
 # get chromosome info
@@ -785,7 +799,7 @@ excludeBED <- read_tsv(fileNameOut1, col_names = FALSE)
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
 # Convert to GRanges object
-gapsGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE)
+gapsGR <- make_granges_from_source(excludeBED, source = c(fileNameOut1, fileNameOut2))
 # Sort GR object
 gapsGR <- sort(gapsGR)
 # Look inside 
@@ -850,7 +864,7 @@ excludeBED <- read_tsv(fileNameOut2, col_names = FALSE)
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
 # Convert to GRanges object
-gapsGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE)
+gapsGR <- make_granges_from_source(excludeBED, source = c(fileNameOut1, fileNameOut2))
 # Sort GR object
 gapsGR <- sort(gapsGR)
 # Add censat type
@@ -914,7 +928,7 @@ excludeBED <- read_tsv(fileNameOut2, col_names = FALSE)
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
 # Convert to GRanges object
-gapsGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE)
+gapsGR <- make_granges_from_source(excludeBED, source = c(fileNameOut1, fileNameOut2))
 # Sort GR object
 gapsGR <- sort(gapsGR)
 # get chromosome info
@@ -976,7 +990,7 @@ excludeBED <- read_tsv(fileNameOut2, col_names = FALSE)
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
 # Convert to GRanges object
-gapsGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE)
+gapsGR <- make_granges_from_source(excludeBED, source = c(fileNameOut1, fileNameOut2))
 # Sort GR object
 gapsGR <- sort(gapsGR)
 # get chromosome info
@@ -1037,7 +1051,7 @@ excludeBED <- read_tsv(fileNameOut2, col_names = FALSE)
 all_columns <- c("chr", "start", "stop", "name", "score", "strand", "signalValue", "pValue", "qValue", "peak")
 colnames(excludeBED) <- all_columns[1:ncol(excludeBED)]
 # Convert to GRanges object
-gapsGR <- GenomicRanges::makeGRangesFromDataFrame(excludeBED, keep.extra.columns = TRUE)
+gapsGR <- make_granges_from_source(excludeBED, source = c(fileNameOut1, fileNameOut2))
 # Sort GR object
 gapsGR <- sort(gapsGR)
 # get chromosome info
@@ -1324,6 +1338,4 @@ for(i in 1:length(data_name)){
 #   geom_bar(stat="identity") +
 #   theme_bw() + theme(legend.position = "none")
 # ggsave("man/figures/excluderanges_hg19_gaps_number.png", width = 5, height = 2.5)
-
-
 
